@@ -1,0 +1,51 @@
+# Node modules
+node_modules/
+
+# Log files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build artifacts
+dist/
+build/
+*.asar
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Temp files
+*.tmp
+*.swp
+*.bak
+
+# VSCode/IDE folders
+.vscode/
+.idea/
+
+# Electron cache
+.cache/
+electron-builder-cache/
+out/
+release/
+
+# Backup or extracted folders
+app.asar.unpacked.old/
+app.asar.bak/
+__MACOSX/
+
+# Misc
+*.orig
+*.rej
+
+# If you upload firmware or temp firmware files
+*.bin
+*.sig
+
+# Optional: Ignore secrets or configs
+.env
+*.pem
+*.crt
+*.key

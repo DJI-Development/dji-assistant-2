@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>DJI Assistant - Firmware Flash Tool</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #fff;
+      padding: 20px;
+    }
+
+    h2 { margin-bottom: 10px; }
+
+    #log {
+      background: black;
+      color: lime;
+      font-family: monospace;
+      padding: 10px;
+      height: 250px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+
+    button {
+      padding: 8px 14px;
+      font-size: 14px;
+      background-color: #1e88e5;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      margin-top: 10px;
+    }
+
+    input[type="file"] {
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h2>DJI Assistant - Firmware Flash Tool</h2>
+  <input type="file" id="firmwareFile" accept=".bin,.sig" />
+  <br />
+  <button id="uploadBtn">Flash Firmware</button>
+  <div id="log">[Logs will appear here]</div>
+
+  <script src="./tools.js"></script>
+</body>
+</html>
