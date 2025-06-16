@@ -8,40 +8,53 @@
       font-family: Arial, sans-serif;
       background: #f0f0f0;
       margin: 0;
+      padding: 0;
+    }
+    #header {
+      background: #1e88e5;
+      color: #fff;
+      padding: 10px 20px;
+      font-size: 20px;
+    }
+    #content {
       padding: 20px;
     }
-    h2 {
-      color: #222;
-    }
-    .button-group {
-      margin-bottom: 15px;
-    }
     button {
-      padding: 6px 14px;
+      padding: 6px 12px;
       margin-right: 8px;
     }
     #log {
-      background: #000;
-      color: #0f0;
-      padding: 10px;
-      height: 240px;
+      background: black;
+      color: lime;
       font-family: monospace;
-      white-space: pre;
+      padding: 10px;
+      height: 250px;
       overflow-y: auto;
+      margin-top: 10px;
+      white-space: pre-wrap;
+    }
+    #progressBar {
+      width: 100%;
+      height: 20px;
+      margin-top: 10px;
     }
   </style>
 </head>
 <body>
-  <h2>DJI Assistant - Firmware Flash Tool</h2>
-  <div class="button-group">
+  <div id="header">DJI Assistant - Firmware Flash Tool</div>
+  <div id="content">
+    <input type="file" id="firmwareFile" accept=".bin,.sig" style="display:none" />
     <button id="selectBtn">Choose File</button>
     <button id="flashBtn">Flash Firmware</button>
     <button id="pauseBtn" disabled>Pause</button>
     <button id="resumeBtn" disabled>Resume</button>
     <button id="cancelBtn" disabled>Cancel</button>
+
+    <progress id="progressBar" value="0" max="100"></progress>
+    <span id="progressText">0%</span>
+
+    <div id="log">[Logs will appear here]</div>
   </div>
-  <input type="file" id="firmwareFile" style="display: none;" accept=".bin,.sig">
-  <div id="log">[Logs will appear here]</div>
 
   <script src="tools.js"></script>
 </body>

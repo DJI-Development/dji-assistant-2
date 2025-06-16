@@ -1,37 +1,55 @@
-"use strict";
+'use strict';
 
 let file = null;
-let ws = null;
 let paused = false;
-let canceled = false;
-let offset = 0;
-let chunkSize = 512 * 1024;
+let cancelled = false;
+let ws = null;
 
-const fileInput = document.getElementById("firmwareFile");
-const logBox = document.getElementById("log");
+const firmwareInput = document.getElementById('firmwareFile');
+const selectBtn = document.getElementById('selectBtn');
+const flashBtn = document.getElementById('flashBtn');
+const pauseBtn = document.getElementById('pauseBtn');
+const resumeBtn = document.getElementById('resumeBtn');
+const cancelBtn = document.getElementById('cancelBtn');
+const progressBar = document.getElementById('progressBar');
+const progressText = document.getElementById('progressText');
+const log = document.getElementById('log');
 
-document.getElementById("selectBtn").onclick = () => fileInput.click();
+function appendLog(msg) {
+  const now = new Date().toLocaleTimeString();
+  log.textContent += `[${now}] ${msg}\n`;
+  log.scrollTop = log.scrollHeight;
+}
 
-fileInput.addEventListener("change", () => {
-  file = fileInput.files[0];
-  offset = 0;
-  appendLog(`[Ready] Selected file: ${file.name}`);
-  document.getElementById("pauseBtn").disabled = false;
-  document.getElementById("cancelBtn").disabled = false;
+selectBtn.addEventListener('click', () => {
+  firmwareInput.click();
 });
 
-document.getElementById("flashBtn").onclick = () => {
+firmwareInput.addEventListener('change', () => {
+  file = firmwareInput.files[0];
+  if (file) {
+    appendLog(`[Ready] Selected file: ${file.name}`);
+  }
+});
+
+flashBtn.addEventListener('click', () => {
   if (!file) {
-    alert("Please select a firmware file first.");
+    appendLog('[Error] No file selected.');
     return;
   }
+
+  cancelled = false;
+  paused = false;
+  pauseBtn.disabled = false;
+  cancelBtn.disabled = false;
+  flashBtn.disabled = true;
 
   ws = new WebSocket("ws://127.0.0.1:58778/ws/device");
 
   ws.onopen = () => {
-    appendLog("[WS] Connected");
+    appendLog('[WS] Connected');
     ws.send(JSON.stringify({ action: "start_upload", filename: file.name }));
-    sendNextChunk();
+    sendChunks();
   };
 
   ws.onmessage = (event) => {
@@ -39,67 +57,74 @@ document.getElementById("flashBtn").onclick = () => {
   };
 
   ws.onerror = (err) => {
-    appendLog(`[WS] Error: ${err.message}`);
+    appendLog(`[WS Error] ${err.message || err}`);
   };
 
   ws.onclose = () => {
-    appendLog("[WS] Connection closed");
+    appendLog('[WS] Connection closed.');
+    pauseBtn.disabled = true;
+    resumeBtn.disabled = true;
+    cancelBtn.disabled = true;
+    flashBtn.disabled = false;
   };
-};
+});
 
-document.getElementById("pauseBtn").onclick = () => {
+pauseBtn.addEventListener('click', () => {
   paused = true;
-  appendLog("[Action] Paused...");
-};
+  pauseBtn.disabled = true;
+  resumeBtn.disabled = false;
+  appendLog('[Action] Upload paused...');
+});
 
-document.getElementById("resumeBtn").onclick = () => {
-  if (!file || !ws) return;
+resumeBtn.addEventListener('click', () => {
   paused = false;
-  appendLog("[Action] Resuming...");
-  sendNextChunk();
-};
+  resumeBtn.disabled = true;
+  pauseBtn.disabled = false;
+  appendLog('[Action] Resuming...');
+  sendChunks();
+});
 
-document.getElementById("cancelBtn").onclick = () => {
-  canceled = true;
-  if (ws) ws.close();
-  appendLog("[Action] Upload canceled.");
-};
+cancelBtn.addEventListener('click', () => {
+  cancelled = true;
+  paused = false;
+  pauseBtn.disabled = true;
+  resumeBtn.disabled = true;
+  cancelBtn.disabled = true;
+  flashBtn.disabled = false;
+  appendLog('[Action] Upload cancelled.');
+  if (ws && ws.readyState === WebSocket.OPEN) ws.close();
+  progressBar.value = 0;
+  progressText.textContent = '0%';
+});
 
-function sendNextChunk() {
-  if (!ws || ws.readyState !== WebSocket.OPEN) return;
-  if (paused) {
-    document.getElementById("resumeBtn").disabled = false;
-    return;
-  }
-  if (canceled) return;
+let offset = 0;
+const chunkSize = 512 * 1024;
+
+function sendChunks() {
+  if (!file || cancelled || paused || offset >= file.size) return;
 
   const reader = new FileReader();
-  const slice = file.slice(offset, offset + chunkSize);
+  const chunk = file.slice(offset, offset + chunkSize);
 
   reader.onload = () => {
-    ws.send(new Uint8Array(reader.result));
+    if (cancelled || paused) return;
+
+    const buffer = reader.result;
+    ws.send(buffer);
     offset += chunkSize;
 
-    const percent = Math.min(100, ((offset / file.size) * 100).toFixed(2));
+    const percent = Math.min(100, Math.round((offset / file.size) * 100));
+    progressBar.value = percent;
+    progressText.textContent = `${percent}%`;
+
     appendLog(`[Uploading] ${percent}% (${offset}/${file.size} bytes)`);
 
-    if (offset < file.size) {
-      setTimeout(sendNextChunk, 50);
-    } else {
-      appendLog("[Done] All chunks sent. Sending start_flash...");
-      ws.send(JSON.stringify({ action: "start_flash", filename: file.name }));
-    }
+    setTimeout(sendChunks, 20);
   };
 
   reader.onerror = () => {
-    appendLog("[Error] Failed to read file.");
+    appendLog('[Error] Failed to read file.');
   };
 
-  reader.readAsArrayBuffer(slice);
-}
-
-function appendLog(msg) {
-  const now = new Date().toLocaleTimeString();
-  logBox.textContent += `[${now}] ${msg}\n`;
-  logBox.scrollTop = logBox.scrollHeight;
+  reader.readAsArrayBuffer(chunk);
 }
